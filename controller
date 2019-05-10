@@ -1,0 +1,25 @@
+
+-- === controller 文件
+-----
+-------------------------------------
+Logger logger = LoggerFactory.getLogger();
+
+	private MakePdfService MakePdfService;
+
+	@Override
+	protected ModelAndView doHandleRequest(HttpServletRequest req,
+			HttpServletResponse response) throws Exception {
+		MakePdfService = ContextHolder.getBean("makePdfServiceImpl");
+		String id = req.getParameter("id");
+		//获取路径
+		String imagePath = req.getSession().getServletContext().getRealPath("");
+		logger.info("生成pdf获取到的项目绝对路径为：" + imagePath);
+		
+		Document document = new Document();
+		response.setHeader("Content-Disposition", "attachment; filename=\""
+				+ new String((shenqingjianNo + ".pdf").getBytes("gbk"), "iso-8859-1"));
+		PdfWriter.getInstance(document, response.getOutputStream());
+		MakePdfService.createPadPdf(id, imagePath, document);
+		return null;
+	}
+ 
