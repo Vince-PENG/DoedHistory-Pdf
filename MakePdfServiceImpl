@@ -1,0 +1,238 @@
+@Service
+public class MakePdfServiceImpl implements MakePdfService{
+	
+	public static final Log log = LogFactory.getLog(MakePdfServiceImpl.class);
+	private static Font headfont;// 设置字体大小
+	private static Font keyfont;// 设置字体大小
+	private static Font textfont;// 设置字体大小
+	private static Font titlefont;// 设置字体大小
+	private static int maxWidth = 550;
+	
+	@Autowired
+	private CustomerApplyInfoForPdfServiceImpl caipser;
+	
+	static {
+		BaseFont bfChinese;
+		try {
+			bfChinese = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
+			headfont = new Font(bfChinese, 18, Font.BOLD);// 设置字体大小
+			titlefont = new Font(bfChinese, 12, Font.BOLD);
+			keyfont = new Font(bfChinese, 9, Font.BOLD);// 设置字体大小
+			textfont = new Font(bfChinese, 8, Font.NORMAL);// 设置字体大小
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	/**
+	 * 生成pdf文件
+	 * @param id
+	 * @throws DocumentException 
+	 * @throws IOException 
+	 * @throws MalformedURLException 
+	 */
+	@Override
+	public void create51Pdf(String id, String imagePath, Document document) throws DocumentException, MalformedURLException, IOException{
+		if(id == null){
+			log.info("id为空！无法生成pdf文件！");
+			return ;
+		}
+		SQJAllInfoEntity sqjAll = caipser.getCustomerApplyInfofor51(id);
+		
+		//创建时间
+	    // String pdfName = entity1.getShenqingjianNo() + "-" + DateUtil.format(new Date(), "yyyy-MM-dd-mm-ss") ;
+		// 1.新建document对象
+		// 第一个参数是页面大小。接下来的参数分别是左、右、上和下页边距。
+	    document.setPageSize(PageSize.A4);
+	    document.setMargins( 50, 50, 50, 50);
+		// 2.建立一个书写器(Writer)与document对象关联，通过书写器(Writer)可以将文档写入到磁盘中。
+		// 创建 PdfWriter 对象 第一个参数是对文档对象的引用，第二个参数是文件的实际名称，在该名称中还会给出其输出路径。
+		//PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("D:\\pdf\\" + pdfName + ".pdf"));
+		// 3.打开文档
+		document.open();
+		// 4.向文档中添加内容
+		try{
+			String path = imagePath + "/images/pdf_log_0317.png";
+			log.info("pdf，获取到的图片地址为：" + path);
+			Image jpeg = Image.getInstance(path);
+			jpeg.setAlignment(Image.ALIGN_CENTER);
+			jpeg.scaleAbsolute(341, 57);
+			jpeg.setSpacingAfter(1.0f);
+			document.add(jpeg);
+		}catch(Exception e){
+			log.info("图片加载错误：将不显示图片");
+			log.info(e);
+		}
+		
+		PdfPTable table = createTable(4);
+        table.addCell(createCell("信息", headfont,Element.ALIGN_CENTER, 4, false));
+        
+        table.addCell(createCell("申请件编号", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getShenqingjianNo()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("进件时间", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(FormatDate(entity1.getCreateDate()), textfont, Element.ALIGN_LEFT));
+        
+        table.addCell(createCell("基 础 信 息", titlefont,Element.ALIGN_CENTER, 4));
+        
+        table.addCell(createCell("申请卡种", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangChanShu(entity1.getChanpingId()), textfont,Element.ALIGN_LEFT, 3, true));
+        table.addCell(createCell("姓名", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getName()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("姓名拼音", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getEnname()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("身份证号", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getIdcard()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("手机号", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getMobile()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("身份证生效日期", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity2.getIdcardSendDate()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("身份证截止日期", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getIdcardValidDate()), textfont, Element.ALIGN_LEFT));
+        
+        table.addCell(createCell("个 人 信 息", titlefont,Element.ALIGN_CENTER, 4));
+        
+        table.addCell(createCell("婚姻状态", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("MRTL", entity1.getMaritalstatus()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("教育程度", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("EDUCA", entity1.getEducation()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("住宅性质", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("OWNHM", entity1.getHomesituation()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("住宅所在省市区", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getHomeadd1()) + judgeNull(entity1.getHomeadd2()) 
+        		+ judgeNull(entity1.getHomeadd3()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("住宅信息地址", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getHomeadd4()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("直系亲属姓名", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getImfamilyname()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("直属亲属手机号", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getImfamilymobile()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("直系亲属与办卡人关系", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("CNREL", entity1.getImfamilyrelationship()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("其他联系人姓名", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getLinkman1name()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("其他联系人手机号", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getLinkman1mobile()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("其他联系人与办卡人关系", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("CNREL", entity1.getLinkman1relationship()), textfont,Element.ALIGN_LEFT, 3, true));
+        
+        table.addCell(createCell("工 作 信 息", titlefont,Element.ALIGN_CENTER, 4));
+        
+        table.addCell(createCell("工作单位名称", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getCompany()), textfont,Element.ALIGN_LEFT, 3, true));
+        table.addCell(createCell("单位所在省市区", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getCompanyadd1()) + judgeNull(entity1.getCompanyadd2()) 
+        		+ judgeNull(entity1.getCompanyadd3()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("单位详细地址", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getCompanyadd4()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("单位邮编", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getCompanypostcode()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("单位电话", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getCompanyphone()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("单位性质", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("OCCAT", entity1.getCompanytype()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("行业类别", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("OCCCD", entity1.getIndustrycategory()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("所在部门", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getDepartment()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("公司职务", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("CDUTY", entity1.getPost()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("年收入（万元）", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(String.valueOf(entity1.getSalary())), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("工龄（年）", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getYearsemployed()), textfont, Element.ALIGN_LEFT));
+        
+        table.addCell(createCell("卡 片 信 息", titlefont,Element.ALIGN_CENTER, 4));
+        
+        table.addCell(createCell("电子邮箱", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(judgeNull(entity1.getEmail()), textfont,Element.ALIGN_LEFT, 3, true));
+        table.addCell(createCell("卡片寄送地址", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("085", entity4.getDeliveryAddress()), textfont, Element.ALIGN_LEFT));
+        table.addCell(createCell("账单寄送方式", keyfont, Element.ALIGN_LEFT));
+        table.addCell(createCell(caipser.getChangeDictDesc("STMCD", entity2.getBilltype()), textfont, Element.ALIGN_LEFT));
+        document.add(table);
+        // 5.关闭文档
+        document.close();
+	}
+	
+
+	
+    
+	public static PdfPTable createTable(int colNumber){
+        PdfPTable table = new PdfPTable(colNumber);
+        try{
+            table.setTotalWidth(maxWidth);
+            table.setLockedWidth(true);
+            table.setHorizontalAlignment(Element.ALIGN_CENTER);     
+            table.getDefaultCell().setBorder(1);
+            table.setWidths(new int []{100,150,100,150});
+            
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return table;
+    }
+	
+	public static PdfPCell createCell(String value,Font font,int align){
+        PdfPCell cell = new PdfPCell();
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setHorizontalAlignment(align);
+        cell.setPhrase(new Phrase(value,font));
+        cell.setPadding(5.0f);
+        cell.setPaddingLeft(8.0f);
+       return cell;
+	}
+	/**
+	 * 创建单元格
+	 * @param value
+	 * @param font
+	 * @param align
+	 * @param colspan
+	 * @return
+	 */
+	public static PdfPCell createCell(String value,Font font,int align,int colspan){
+        PdfPCell cell = new PdfPCell();
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setHorizontalAlignment(align);
+        cell.setBackgroundColor(new BaseColor(0, 153, 225));
+        cell.setColspan(colspan);
+        cell.setPhrase(new Phrase(value,font));
+        cell.setPadding(3.0f);
+       return cell;
+    }
+	
+  
+    public static PdfPCell createCell(String value,Font font,int align,int colspan,boolean boderFlag){
+        PdfPCell cell = new PdfPCell();
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setHorizontalAlignment(align);    
+        cell.setColspan(colspan);
+        cell.setPhrase(new Phrase(value,font));
+        if(!boderFlag){ 
+            cell.setBorder(0);
+            cell.setPaddingTop(1.0f);
+            cell.setPaddingBottom(15.0f);
+        }else{
+        	cell.setPaddingLeft(8.0f);
+        }
+       return cell;
+    }
+    /**
+     * 判断是否为null,如果为null,返回 ""
+     * @param judgeStr
+     * @return
+     */
+    public String judgeNull(String judgeStr){
+    	return judgeStr !=null ? judgeStr : "";
+    }
+    /**
+     * 时间转换为  yyyy-MM-dd
+     * @param time
+     * @return
+     */
+    public String FormatDate(Date time){
+    	return time !=null ? DateUtil.format(time, "yyyy-MM-dd") : "";
+    }
+
+	
+}
